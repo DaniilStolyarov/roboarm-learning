@@ -66,7 +66,7 @@ public class MovePayload
         StartCoroutine(SendMoveRequest(
             ));
     }
-    void OnGUI()
+    /*void OnGUI()
     {
         GUI.skin.label.fontSize = 18;
         GUI.skin.textField.fontSize = 16;
@@ -105,7 +105,7 @@ public class MovePayload
         }
 
         GUILayout.EndArea();
-    }
+    }*/
 
     private string SpinnerField(string label, string text, ref float value)
     {
