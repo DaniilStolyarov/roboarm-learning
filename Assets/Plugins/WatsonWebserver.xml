@@ -1,0 +1,326 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>WatsonWebserver</name>
+    </assembly>
+    <members>
+        <member name="T:WatsonWebserver.Extensions.HostBuilderExtension.HostBuilder">
+            <summary>
+            Host builder.
+            </summary>
+        </member>
+        <member name="P:WatsonWebserver.Extensions.HostBuilderExtension.HostBuilder.Server">
+            <summary>
+            Webserver.
+            </summary>
+        </member>
+        <member name="P:WatsonWebserver.Extensions.HostBuilderExtension.HostBuilder.Settings">
+            <summary>
+            Webserver settings.
+            </summary>
+        </member>
+        <member name="M:WatsonWebserver.Extensions.HostBuilderExtension.HostBuilder.#ctor(System.String,System.Int32,System.Boolean,System.Func{WatsonWebserver.Core.HttpContextBase,System.Threading.Tasks.Task})">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="hostname">IP address on which to listen.</param>
+            <param name="port">Port on which to listen.</param>
+            <param name="ssl">Enable or disable SSL.</param>
+            <param name="defaultRoute">Default route.</param>
+        </member>
+        <member name="M:WatsonWebserver.Extensions.HostBuilderExtension.HostBuilder.#ctor(WatsonWebserver.Core.WebserverSettings,System.Func{WatsonWebserver.Core.HttpContextBase,System.Threading.Tasks.Task})">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="settings">Webserver settings.</param>
+            <param name="defaultRoute">Default route.</param>
+        </member>
+        <member name="M:WatsonWebserver.Extensions.HostBuilderExtension.HostBuilder.MapPreflightRoute(System.Func{WatsonWebserver.Core.HttpContextBase,System.Threading.Tasks.Task})">
+            <summary>
+            Map the pre-flight route.
+            </summary>
+            <param name="handler">Handler.</param>
+            <returns>Host builder.</returns>
+        </member>
+        <member name="M:WatsonWebserver.Extensions.HostBuilderExtension.HostBuilder.MapPreRoutingRoute(System.Func{WatsonWebserver.Core.HttpContextBase,System.Threading.Tasks.Task})">
+            <summary>
+            Map the pre-routing route.
+            </summary>
+            <param name="handler">Handler.</param>
+            <returns>Host builder.</returns>
+        </member>
+        <member name="M:WatsonWebserver.Extensions.HostBuilderExtension.HostBuilder.MapAuthenticationRoute(System.Func{WatsonWebserver.Core.HttpContextBase,System.Threading.Tasks.Task})">
+            <summary>
+            Map an authentication route.
+            </summary>
+            <param name="handler">Handler.</param>
+            <returns>Host builder.</returns>
+        </member>
+        <member name="M:WatsonWebserver.Extensions.HostBuilderExtension.HostBuilder.MapContentRoute(System.String,System.Boolean,System.Boolean,System.Func{WatsonWebserver.Core.HttpContextBase,System.Exception,System.Threading.Tasks.Task})">
+            <summary>
+            Map a content route.
+            </summary>
+            <param name="path">Route path.</param>
+            <param name="isDirectory">Flag to indicate if the path is a directory.</param>
+            <param name="requiresAuthentication">Flag to indicate whether or not the route requires authentication.</param>
+            <param name="exceptionHandler">Method to invoke when handling exceptions.</param>
+            <returns>Host builder.</returns>
+        </member>
+        <member name="M:WatsonWebserver.Extensions.HostBuilderExtension.HostBuilder.MapStaticRoute(WatsonWebserver.Core.HttpMethod,System.String,System.Func{WatsonWebserver.Core.HttpContextBase,System.Threading.Tasks.Task},System.Func{WatsonWebserver.Core.HttpContextBase,System.Exception,System.Threading.Tasks.Task},System.Boolean)">
+            <summary>
+            Apply a static route.
+            </summary>
+            <param name="method">HTTP method.</param>
+            <param name="path">Route path.</param>
+            <param name="handler">Route handler.</param>
+            <param name="exceptionHandler">Method to invoke when handling exceptions.</param>
+            <param name="requiresAuthentication">Boolean to indicate if the route requires authentication.</param>
+            <returns>Host builder.</returns>
+        </member>
+        <member name="M:WatsonWebserver.Extensions.HostBuilderExtension.HostBuilder.MapParameteRoute(WatsonWebserver.Core.HttpMethod,System.String,System.Func{WatsonWebserver.Core.HttpContextBase,System.Threading.Tasks.Task},System.Func{WatsonWebserver.Core.HttpContextBase,System.Exception,System.Threading.Tasks.Task},System.Boolean)">
+            <summary>
+            Apply a parameter route.
+            </summary>
+            <param name="method">HTTP method.</param>
+            <param name="path">Route path.</param>
+            <param name="handler">Route handler.</param>
+            <param name="exceptionHandler">Method to invoke when handling exceptions.</param>
+            <param name="requiresAuthentication">Boolean to indicate if the route requires authentication.</param>
+            <returns>Host builder.</returns>
+        </member>
+        <member name="M:WatsonWebserver.Extensions.HostBuilderExtension.HostBuilder.MapParameterRoute(WatsonWebserver.Core.HttpMethod,System.String,System.Func{WatsonWebserver.Core.HttpContextBase,System.Threading.Tasks.Task},System.Func{WatsonWebserver.Core.HttpContextBase,System.Exception,System.Threading.Tasks.Task},System.Boolean)">
+            <summary>
+            Apply a parameter route.
+            </summary>
+            <param name="method">HTTP method.</param>
+            <param name="path">Route path.</param>
+            <param name="handler">Route handler.</param>
+            <param name="exceptionHandler">Method to invoke when handling exceptions.</param>
+            <param name="requiresAuthentication">Boolean to indicate if the route requires authentication.</param>
+            <returns>Host builder.</returns>
+        </member>
+        <member name="M:WatsonWebserver.Extensions.HostBuilderExtension.HostBuilder.MapDynamicRoute(WatsonWebserver.Core.HttpMethod,System.Text.RegularExpressions.Regex,System.Func{WatsonWebserver.Core.HttpContextBase,System.Threading.Tasks.Task},System.Func{WatsonWebserver.Core.HttpContextBase,System.Exception,System.Threading.Tasks.Task},System.Boolean)">
+            <summary>
+            Apply a dynamic route.
+            </summary>
+            <param name="method">HTTP method.</param>
+            <param name="regex">Regular expression.</param>
+            <param name="handler">Route handler.</param>
+            <param name="exceptionHandler">Method to invoke when handling exceptions.</param>
+            <param name="requiresAuthentication">Boolean to indicate if the route requires authentication.</param>
+            <returns>Host builder.</returns>
+        </member>
+        <member name="M:WatsonWebserver.Extensions.HostBuilderExtension.HostBuilder.MapDefaultRoute(System.Func{WatsonWebserver.Core.HttpContextBase,System.Threading.Tasks.Task})">
+            <summary>
+            Map the default route.
+            </summary>
+            <param name="handler">Handler.</param>
+            <returns>Host builder.</returns>
+        </member>
+        <member name="M:WatsonWebserver.Extensions.HostBuilderExtension.HostBuilder.MapPostRoutingRoute(System.Func{WatsonWebserver.Core.HttpContextBase,System.Threading.Tasks.Task})">
+            <summary>
+            Map the post-routing route.
+            </summary>
+            <param name="handler">Handler.</param>
+            <returns>Host builder.</returns>
+        </member>
+        <member name="M:WatsonWebserver.Extensions.HostBuilderExtension.HostBuilder.Build">
+            <summary>
+            Build the server.
+            </summary>
+            <returns>Server.</returns>
+        </member>
+        <member name="T:WatsonWebserver.HttpContext">
+            <summary>
+            HTTP context including both request and response.
+            </summary>
+        </member>
+        <member name="M:WatsonWebserver.HttpContext.#ctor">
+            <summary>
+            Instantiate the object.
+            </summary>
+        </member>
+        <member name="M:WatsonWebserver.HttpContext.#ctor(System.Net.HttpListenerContext,WatsonWebserver.Core.WebserverSettings,WatsonWebserver.Core.WebserverEvents,WatsonWebserver.Core.ISerializationHelper)">
+            <summary>
+            Instantiate.
+            </summary>
+            <param name="ctx">HTTP listener context.</param>
+            <param name="settings">Settings.</param>
+            <param name="events">Events.</param>
+            <param name="serializer">Serializer.</param>
+        </member>
+        <member name="T:WatsonWebserver.HttpRequest">
+            <summary>
+            HTTP request.
+            </summary>
+        </member>
+        <member name="P:WatsonWebserver.HttpRequest.Data">
+            <summary>
+            The stream from which to read the request body sent by the requestor (client).
+            </summary>
+        </member>
+        <member name="P:WatsonWebserver.HttpRequest.DataAsBytes">
+            <summary>
+            Retrieve the request body as a byte array.  This will fully read the stream. 
+            </summary>
+        </member>
+        <member name="P:WatsonWebserver.HttpRequest.DataAsString">
+            <summary>
+            Retrieve the request body as a string.  This will fully read the stream.
+            </summary>
+        </member>
+        <member name="P:WatsonWebserver.HttpRequest.ListenerContext">
+            <summary>
+            The original HttpListenerContext from which the HttpRequest was constructed.
+            </summary>
+        </member>
+        <member name="M:WatsonWebserver.HttpRequest.#ctor">
+            <summary>
+            HTTP request.
+            </summary>
+        </member>
+        <member name="M:WatsonWebserver.HttpRequest.#ctor(System.Net.HttpListenerContext,WatsonWebserver.Core.ISerializationHelper)">
+            <summary>
+            HTTP request.
+            Instantiate the object using an HttpListenerContext.
+            </summary>
+            <param name="ctx">HttpListenerContext.</param>
+            <param name="serializer">Serialization helper.</param>
+        </member>
+        <member name="M:WatsonWebserver.HttpRequest.ReadChunk(System.Threading.CancellationToken)">
+            <summary>
+            For chunked transfer-encoded requests, read the next chunk.
+            It is strongly recommended that you use the ChunkedTransfer parameter before invoking this method.
+            </summary>
+            <param name="token">Cancellation token useful for canceling the request.</param>
+            <returns>Chunk.</returns>
+        </member>
+        <member name="M:WatsonWebserver.HttpRequest.HeaderExists(System.String)">
+            <summary>
+            Determine if a header exists.
+            </summary>
+            <param name="key">Header key.</param>
+            <returns>True if exists.</returns>
+        </member>
+        <member name="M:WatsonWebserver.HttpRequest.QuerystringExists(System.String)">
+            <summary>
+            Determine if a querystring entry exists.
+            </summary>
+            <param name="key">Querystring key.</param>
+            <returns>True if exists.</returns>
+        </member>
+        <member name="M:WatsonWebserver.HttpRequest.RetrieveHeaderValue(System.String)">
+            <summary>
+            Retrieve a header (or querystring) value.
+            </summary>
+            <param name="key">Key.</param>
+            <returns>Value.</returns>
+        </member>
+        <member name="M:WatsonWebserver.HttpRequest.RetrieveQueryValue(System.String)">
+            <summary>
+            Retrieve a querystring value.
+            </summary>
+            <param name="key">Key.</param>
+            <returns>Value.</returns>
+        </member>
+        <member name="T:WatsonWebserver.HttpResponse">
+            <summary>
+            HTTP response.
+            </summary>
+        </member>
+        <member name="P:WatsonWebserver.HttpResponse.DataAsString">
+            <summary>
+            Retrieve the response body sent using a Send() or SendAsync() method.
+            </summary>
+        </member>
+        <member name="P:WatsonWebserver.HttpResponse.DataAsBytes">
+            <summary>
+            Retrieve the response body sent using a Send() or SendAsync() method.
+            </summary>
+        </member>
+        <member name="P:WatsonWebserver.HttpResponse.Data">
+            <summary>
+            Response data stream sent to the requestor.
+            </summary>
+        </member>
+        <member name="M:WatsonWebserver.HttpResponse.#ctor">
+            <summary>
+            Instantiate the object.
+            </summary>
+        </member>
+        <member name="M:WatsonWebserver.HttpResponse.Send(System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:WatsonWebserver.HttpResponse.Send(System.Int64,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:WatsonWebserver.HttpResponse.Send(System.String,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:WatsonWebserver.HttpResponse.Send(System.Byte[],System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:WatsonWebserver.HttpResponse.Send(System.Int64,System.IO.Stream,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:WatsonWebserver.HttpResponse.SendChunk(System.Byte[],System.Boolean,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:WatsonWebserver.HttpResponse.SendEvent(System.String,System.Boolean,System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:WatsonWebserver.Webserver">
+            <summary>
+            Watson webserver.
+            </summary>
+        </member>
+        <member name="P:WatsonWebserver.Webserver.IsListening">
+            <summary>
+            Indicates whether or not the server is listening.
+            </summary>
+        </member>
+        <member name="P:WatsonWebserver.Webserver.RequestCount">
+            <summary>
+            Number of requests being serviced currently.
+            </summary>
+        </member>
+        <member name="M:WatsonWebserver.Webserver.#ctor(WatsonWebserver.Core.WebserverSettings,System.Func{WatsonWebserver.Core.HttpContextBase,System.Threading.Tasks.Task})">
+            <summary>
+            Creates a new instance of the webserver.
+            If you do not provide a settings object, default settings will be used, which will cause the webserver to listen on http://localhost:8000, and send events to the console.
+            </summary>
+            <param name="settings">Webserver settings.</param>
+            <param name="defaultRoute">Method used when a request is received and no matching routes are found.  Commonly used as the 404 handler when routes are used.</param>
+        </member>
+        <member name="M:WatsonWebserver.Webserver.Dispose">
+            <summary>
+            Tear down the server and dispose of background workers.
+            Do not use this object after disposal.
+            </summary>
+        </member>
+        <member name="M:WatsonWebserver.Webserver.Start(System.Threading.CancellationToken)">
+            <summary>
+            Start accepting new connections.
+            </summary>
+            <param name="token">Cancellation token useful for canceling the server.</param>
+        </member>
+        <member name="M:WatsonWebserver.Webserver.StartAsync(System.Threading.CancellationToken)">
+            <summary>
+            Start accepting new connections.
+            </summary>
+            <param name="token">Cancellation token useful for canceling the server.</param>
+            <returns>Task.</returns>
+        </member>
+        <member name="M:WatsonWebserver.Webserver.Stop">
+            <summary>
+            Stop accepting new connections.
+            </summary>
+        </member>
+        <member name="M:WatsonWebserver.Webserver.Dispose(System.Boolean)">
+            <summary>
+            Tear down the server and dispose of background workers.
+            Do not use this object after disposal.
+            </summary>
+        </member>
+    </members>
+</doc>
