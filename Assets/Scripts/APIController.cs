@@ -224,7 +224,8 @@ public class APIController : MonoBehaviour
 
         RunOnMainThread(() =>
         {
-            Camera cam = Camera.main;                       // или выбери любую другую
+            GameObject DepthCameraObject = GameObject.FindGameObjectWithTag("depth_camera");
+            Camera cam = DepthCameraObject.GetComponent<Camera>();
             if (cam == null)
             {
                 tcs.SetException(new Exception("No camera"));
