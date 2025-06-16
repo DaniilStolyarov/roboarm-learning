@@ -4,8 +4,9 @@ using Unity.Mathematics;
 using Unity.Collections;
 using UnityEngine.Perception.GroundTruth;
 using UnityEngine.Perception.GroundTruth.Sensors.Channels;
+using System.Threading.Tasks;
 
-public class DepthColorShot : MonoBehaviour
+public class DepthCameraManager : MonoBehaviour
 {
     [Header("References")]
     public PerceptionCamera pc;
@@ -18,10 +19,15 @@ public class DepthColorShot : MonoBehaviour
     public float gamma = 0.7f;
 
     DepthChannel depthCh;
-    bool waiting;
+    /// <summary>
+    /// null -> camera is ready to capture
+    /// not null -> some image is in process, reject any incoming requests
+    /// </summary>
+    public TaskCompletionSource<NativeArray<float4>> ExternalRequestSource = null;
 
     void Start()
     {
+        pc.captureTriggerMode = UnityEngine.Perception.GroundTruth.DataModel.CaptureTriggerMode.Manual;
         depthCh = pc.EnableChannel<DepthChannel>();
         depthCh.outputTextureReadback += OnDepth;
     }
@@ -29,13 +35,21 @@ public class DepthColorShot : MonoBehaviour
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.Space))
-        { pc.RequestCapture(); waiting = true; }
+        { 
+            pc.RequestCapture(); 
+        }
     }
-
+    public void RequestCaptureExternal()
+    {
+        pc.RequestCapture(); 
+    }
     void OnDepth(int frame, NativeArray<float4> data)
     {
-        if (!waiting) return;
-        waiting = false;
+        if (ExternalRequestSource != null)
+        {
+            ExternalRequestSource.SetResult(data);
+            ExternalRequestSource = null;
+        }
 
         int w = depthCh.outputTexture.width;
         int h = depthCh.outputTexture.height;

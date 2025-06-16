@@ -9,6 +9,8 @@ using System;
 using System.IO;
 using Unity.Robotics.UrdfImporter.Control;
 using System.Linq;
+using Unity.Collections;
+using Unity.Mathematics;
 public class APIController : MonoBehaviour
 {
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -21,38 +23,25 @@ public class APIController : MonoBehaviour
         server = new Webserver(settings, DefaultRoute);
         server.Routes.AuthenticateRequest = AuthMiddleware;
         server.Routes.PostAuthentication.Static.Add(HttpMethod.GET, "/auth_check", CheckAuthentication);
-        server.Routes.PostAuthentication.Static.Add(HttpMethod.GET, "/joints", GetJointsAngles);
-        server.Routes.PostAuthentication.Static.Add(HttpMethod.GET, "/pose", GetPose);
-        server.Routes.PostAuthentication.Static.Add(HttpMethod.GET, "/urdf", GetCurrentRobotURDF);
-        server.Routes.PostAuthentication.Static.Add(HttpMethod.GET, "/default_articulation_body", GetDefaultArmArticulation);
-        server.Routes.PostAuthentication.Static.Add(HttpMethod.GET, "/pickable_objects", GetAllPickableObjects);
-        server.Routes.PostAuthentication.Static.Add(HttpMethod.GET, "/snapshot", Snapshot);
-        server.Routes.PostAuthentication.Static.Add(HttpMethod.GET, "/vacuum_gripper", GetVacuumGripperState);
-        server.Routes.PostAuthentication.Static.Add(HttpMethod.GET, "/detections", GetDetections);
-        server.Routes.PostAuthentication.Static.Add(HttpMethod.GET, "/depth_camera_image", GetDepthCameraImage);
-        server.Routes.PostAuthentication.Static.Add(HttpMethod.PUT, "/vacuum_gripper", PutGripperMask);
-        server.Routes.PostAuthentication.Static.Add(HttpMethod.GET, "/drop_point", GetDropPoint);
-        server.Routes.PostAuthentication.Static.Add(HttpMethod.PUT, "/drop_point", PutDropPoint);
-        server.Routes.PostAuthentication.Static.Add(HttpMethod.PUT, "/depth_camera_config", PutDepthCameraConfig);
-        server.Routes.PostAuthentication.Static.Add(HttpMethod.GET, "/conveyor_speed", GetConveyorSpeed);
-        server.Routes.PostAuthentication.Static.Add(HttpMethod.PUT, "/conveyor_start", StartConveyor);
-        server.Routes.PostAuthentication.Static.Add(HttpMethod.PUT, "/conveyor_stop", StopConveyor);
-        server.Routes.PostAuthentication.Static.Add(HttpMethod.PUT, "/compressor_on", EnableCompressor);
-        server.Routes.PostAuthentication.Static.Add(HttpMethod.PUT, "/compressor_off", DisableCompressor);
-        server.Routes.PostAuthentication.Static.Add(HttpMethod.GET, "/light_intensity", GetLightIntensity);
-        server.Routes.PostAuthentication.Static.Add(HttpMethod.PUT, "/light_intensity", UpdateLightIntensity);
-        server.Routes.PostAuthentication.Static.Add(HttpMethod.GET, "/spawner/conf", GetSpawnerConfiguration);
-        server.Routes.PostAuthentication.Static.Add(HttpMethod.PUT, "/spawner/conf", UpdateSpawnerConfiguration);
-        server.Routes.PostAuthentication.Static.Add(HttpMethod.POST, "/spawner/spawn", SpawnPickable);
-        server.Routes.PostAuthentication.Static.Add(HttpMethod.DELETE, "/spawner/remove", RemoveLastPickable);
-        server.Routes.PostAuthentication.Static.Add(HttpMethod.PUT, "/move/pose", MoveToPose);
-        server.Routes.PostAuthentication.Static.Add(HttpMethod.PUT, "/move/relative", AddToPose);
-        server.Routes.PostAuthentication.Static.Add(HttpMethod.GET, "/camera/transform", GetCameraTransform);
-        server.Routes.PostAuthentication.Static.Add(HttpMethod.PUT, "/camera/transform", SetCameraTransform);
+        server.Routes.PostAuthentication.Static.Add(HttpMethod.GET, "/arm/joints", GetJointsAngles);
+        server.Routes.PostAuthentication.Static.Add(HttpMethod.GET, "/arm/pose", GetPose);
+        server.Routes.PostAuthentication.Static.Add(HttpMethod.GET, "/arm/urdf", GetCurrentRobotURDF);
+        server.Routes.PostAuthentication.Static.Add(HttpMethod.GET, "/arm/default_articulation_body", GetDefaultArmArticulation);
+        server.Routes.PostAuthentication.Static.Add(HttpMethod.GET, "/goods/list", GetAllPickableObjects);
+        server.Routes.PostAuthentication.Static.Add(HttpMethod.GET, "/camera/rgb", Snapshot);
+        server.Routes.PostAuthentication.Static.Add(HttpMethod.GET, "/vacuum_gripper/state", GetVacuumGripperState);
 
+        server.Routes.PostAuthentication.Static.Add(HttpMethod.GET, "/scene/light_intensity", GetLightIntensity);
+        server.Routes.PostAuthentication.Static.Add(HttpMethod.PUT, "/scene/light_intensity", UpdateLightIntensity);
+        server.Routes.PostAuthentication.Static.Add(HttpMethod.GET, "/goods/conf", GetSpawnerConfiguration);
+        server.Routes.PostAuthentication.Static.Add(HttpMethod.PUT, "/goods/conf", UpdateSpawnerConfiguration);
+        server.Routes.PostAuthentication.Static.Add(HttpMethod.POST, "/goods/spawn", SpawnPickable);
+        server.Routes.PostAuthentication.Static.Add(HttpMethod.DELETE, "/goods/remove", RemoveLastPickable);
+        server.Routes.PostAuthentication.Static.Add(HttpMethod.PUT, "/arm/pose", MoveToPose);
+        server.Routes.PostAuthentication.Static.Add(HttpMethod.PUT, "/arm/relative", AddToPose);
 
+        server.Routes.PostAuthentication.Static.Add(HttpMethod.GET, "/camera/depth", GetDepthData);
         server.Start();
-
     }
 
     // Update is called once per frame
@@ -303,7 +292,7 @@ public class APIController : MonoBehaviour
             cam.targetTexture = null;
             RenderTexture.active = null;
             RenderTexture.ReleaseTemporary(rt);
-            UnityEngine.Object.Destroy(tex);
+            Destroy(tex);
         }
     }
 
@@ -313,80 +302,6 @@ public class APIController : MonoBehaviour
         context.Response.ContentType = "application/json";
         context.Response.StatusCode = 200;
         await context.Response.Send(JsonConvert.SerializeObject(gripperMask));
-    }
-    async Task GetDetections(HttpContextBase context)
-    {
-        var yoloDetections = new[] 
-        {
-            new { class_id = 0, confidence = 0.95, x_min = 100, y_min = 150, x_max = 200, y_max = 250 },
-            new { class_id = 1, confidence = 0.85, x_min = 300, y_min = 350, x_max = 400, y_max = 450 }
-        };
-        context.Response.ContentType = "application/json";
-        context.Response.StatusCode = 200;
-        await context.Response.Send(JsonConvert.SerializeObject(yoloDetections));
-    }
-
-    async Task GetDepthCameraImage(HttpContextBase context)
-    {
-        var DepthImage = new
-        {
-            width = 640,
-            height = 480,
-            data = new byte[640 * 480] // Здесь должен быть массив байтов с данными глубины
-        };
-        context.Response.ContentType = "application/json";
-        context.Response.StatusCode = 200;
-        await context.Response.Send(JsonConvert.SerializeObject(DepthImage));
-    }
-
-    async Task PutGripperMask(HttpContextBase context)
-    {
-        context.Response.StatusCode = 200;
-        await context.Response.Send();
-    }
-
-    async Task GetDropPoint(HttpContextBase context)
-    {
-        var point = new {x = 1, y = 0.8, z = 0.3};
-        context.Response.ContentType = "application/json";
-        context.Response.StatusCode = 200;
-        await context.Response.Send(JsonConvert.SerializeObject(point));
-    }
-    async Task PutDropPoint(HttpContextBase context)
-    {
-        context.Response.StatusCode = 200;
-        await context.Response.Send();
-    }
-    async Task PutDepthCameraConfig(HttpContextBase context)
-    {
-        context.Response.StatusCode = 200;
-        await context.Response.Send();
-    }
-    async Task GetConveyorSpeed(HttpContextBase context)
-    {
-        context.Response.StatusCode = 200;
-        await context.Response.Send("0.72");
-    }
-    async Task StartConveyor(HttpContextBase context)
-    {
-        context.Response.StatusCode = 200;
-        await context.Response.Send();
-    }
-    async Task StopConveyor(HttpContextBase context)
-    {
-        context.Response.StatusCode = 200;
-        await context.Response.Send();
-    }
-
-    async Task EnableCompressor(HttpContextBase context)
-    {
-        context.Response.StatusCode = 200;
-        await context.Response.Send();
-    }
-    async Task DisableCompressor(HttpContextBase context)
-    {
-        context.Response.StatusCode = 200;
-        await context.Response.Send();
     }
 
     async Task GetLightIntensity(HttpContextBase context)
@@ -606,74 +521,38 @@ public class APIController : MonoBehaviour
         else context.Response.StatusCode = 200;
         await context.Response.Send();
     }
-    public class MainCameraDto
-    {
-        public Vector3Dto position { get; set; }
-        public Vector3Dto rotation { get; set; }
-        public float fieldOfView { get; set; }
-    }
 
-    async Task GetCameraTransform(HttpContextBase context)
+    async Task GetDepthData(HttpContextBase ctx)
     {
-        TaskCompletionSource<MainCameraDto> tcs = new TaskCompletionSource<MainCameraDto>();
+        var tcs = new TaskCompletionSource<NativeArray<float4>>();
+
         RunOnMainThread(() =>
         {
-            GameObject mainCamera = GameObject.Find("Main Camera");
-            Camera cameraComponent = mainCamera.GetComponent<Camera>();
-            MainCameraDto mainCameraDto = new MainCameraDto();
-            mainCameraDto.position = new Vector3Dto
+            GameObject DepthCamera = GameObject.FindGameObjectWithTag("depth_camera");
+            DepthCameraManager depthManager = DepthCamera.GetComponent<DepthCameraManager>();
+            if (depthManager.ExternalRequestSource == null)
             {
-                x = mainCamera.transform.position.x,
-                y = mainCamera.transform.position.y,
-                z = mainCamera.transform.position.z
-            };
-            mainCameraDto.rotation = new Vector3Dto()
+                depthManager.ExternalRequestSource = tcs;
+                depthManager.RequestCaptureExternal();
+            }
+            else
             {
-                x = mainCamera.transform.rotation.eulerAngles.x,
-                y = mainCamera.transform.rotation.eulerAngles.y,
-                z = mainCamera.transform.rotation.eulerAngles.z
-            };
-            mainCameraDto.fieldOfView = cameraComponent.fieldOfView;
-            tcs.SetResult(mainCameraDto);
+                tcs.SetException(new Exception("Depth image is already in progress. Can`t process another one!"));
+            }
         });
-        MainCameraDto mainCameraTransform = await tcs.Task;
-        context.Response.StatusCode = 200;
-        context.Response.ContentType = "application/json";
-        await context.Response.Send(JsonConvert.SerializeObject(mainCameraTransform));
-    }
-    async Task SetCameraTransform(HttpContextBase context)
-    {
-        MainCameraDto mainCameraDto;
+
         try
         {
-            mainCameraDto = JsonConvert.DeserializeObject<MainCameraDto>(context.Request.DataAsString);
+            NativeArray<float4> DepthData = await tcs.Task;
+            var ResponseDepth = DepthData.Select(depthElement => 2 - depthElement.x).ToArray();
+            ctx.Response.StatusCode = 200;
+            ctx.Response.ContentType = "application/json";
+            await ctx.Response.Send(JsonConvert.SerializeObject(ResponseDepth));
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            Debug.Log(ex);
-            context.Response.StatusCode = 400;
-            await context.Response.Send();
-            return;
+            ctx.Response.StatusCode = 500;
+            await ctx.Response.Send("Depth Camera Error: " + e.Message);
         }
-        TaskCompletionSource<string> tcs = new TaskCompletionSource<string>();
-        RunOnMainThread(() =>
-        {
-            GameObject mainCamera = GameObject.Find("Main Camera");
-            Camera cameraComponent = mainCamera.GetComponent<Camera>();
-            mainCamera.transform.position.Set(mainCameraDto.position.x,
-                mainCameraDto.position.y, mainCameraDto.position.z);
-
-            mainCamera.transform.rotation = Quaternion.Euler(new Vector3(
-                mainCameraDto.rotation.x,
-            mainCameraDto.rotation.y,
-            mainCameraDto.rotation.z)
-                );
-            cameraComponent.fieldOfView = mainCameraDto.fieldOfView;
-            tcs.SetResult("Done.");
-        });
-        string taskResult = await tcs.Task;
-        context.Response.StatusCode = 200;
-        context.Response.ContentType = "application/json";
-        await context.Response.Send();
     }
 }
