@@ -522,105 +522,108 @@ public class APIController : MonoBehaviour
         await context.Response.Send();
     }
 
-        async Task GetDepthData(HttpContextBase ctx)
+    void ConvertDepthToPoints(TaskCompletionSource<float[][]> tcs, NativeArray<float4> depthData)
+    {
+        RunOnMainThread(() =>
         {
-            var tcs = new TaskCompletionSource<NativeArray<float4>>();
+            GameObject DepthCamera = GameObject.FindGameObjectWithTag("depth_camera");
+            Camera cam = DepthCamera.GetComponent<Camera>();
+            const int W = 640, H = 480;
 
-            RunOnMainThread(() =>
+            var points = depthData.Select((depth, idx) =>
             {
-                GameObject DepthCamera = GameObject.FindGameObjectWithTag("depth_camera");
-                DepthCameraManager depthManager = DepthCamera.GetComponent<DepthCameraManager>();
-                if (depthManager.ExternalRequestSource == null)
-                {
-                    depthManager.ExternalRequestSource = tcs;
-                    depthManager.RequestCaptureExternal();
-                }
-                else
-                {
-                    tcs.SetException(new Exception("Depth image is already in progress. Can`t process another one!"));
-                }
-            });
+                int row = idx / W;   // v
+                int col = idx % W;   // u
 
-            try
-            {
-                NativeArray<float4> DepthData = await tcs.Task;
-                TaskCompletionSource<float[][]> pointsConversionTask = new TaskCompletionSource<float[][]>();
-                ConvertDepthToPoints(pointsConversionTask, DepthData);
-                float[][] points = await pointsConversionTask.Task;
-                ctx.Response.StatusCode = 200;
-                ctx.Response.ContentType = "application/json";
-                await ctx.Response.Send(JsonConvert.SerializeObject(points));
-            }
-            catch (Exception e)
-            {
-                ctx.Response.StatusCode = 500;
-                await ctx.Response.Send("Depth Camera Error: " + e.Message);
-            }
-        }
-        void ConvertDepthToPoints(TaskCompletionSource<float[][]> tcs, NativeArray<float4> depthData)
-        {
-            RunOnMainThread(() =>
-            {
-                GameObject DepthCamera = GameObject.FindGameObjectWithTag("depth_camera");
-                Camera cam = DepthCamera.GetComponent<Camera>();
-                const int W = 640, H = 480;
+                // Unity-экран: (0,0) внизу → перевернём v
+                float u = col;             // 0…639
+                float v = H - 1 - row;     // 0…479 снизу-вверх
 
-                var points = depthData.Select((depth, idx) =>
-                {
-                    int row = idx / W;   // v
-                    int col = idx % W;   // u
+                Vector3 world = cam.ScreenToWorldPoint(new Vector3(u, v, depth.x));
+                Vector3 camPt = cam.transform.InverseTransformPoint(world); // (Xc,Yc,Zc)
 
-                    // Unity-экран: (0,0) внизу → перевернём v
-                    float u = col;             // 0…639
-                    float v = H - 1 - row;     // 0…479 снизу-вверх
+                // Invert Y, чтобы совпало с RealSense (Y вниз)
+                camPt.y = -camPt.y;
 
-                    Vector3 world = cam.ScreenToWorldPoint(new Vector3(u, v, depth.x));
-                    Vector3 camPt = cam.transform.InverseTransformPoint(world); // (Xc,Yc,Zc)
-
-                    // Invert Y, чтобы совпало с RealSense (Y вниз)
-                    camPt.y = -camPt.y;
-
-                    return new float[] { camPt.x, camPt.y, camPt.z };
-                }).ToArray();
-                tcs.SetResult(points);
-            });
-        }
-
-        async Task SendDepthAsNpy(HttpContextBase ctx, float[][] points)
-        {
-            int n = points.Length;
-            const int cols = 3;                // x y z
-            const int itemSize = 4;            // float32
-
-            // ---------- собираем заголовок NPY v1.0 ----------
-            string dict = $"{{'descr': '<f4', 'fortran_order': False, 'shape': ({n}, {cols}), }}";
-            int hdrLen = dict.Length + 1;             // + '\n'
-            int pad = 16 - ((10 + hdrLen) % 16);   // 10 = magic(6)+ver(2)+len(2)
-            string hdrStr = dict + new string(' ', pad) + "\n";
-            byte[] hdrBytes = System.Text.Encoding.ASCII.GetBytes(hdrStr);
-            ushort hdrSize = (ushort)hdrBytes.Length;
-
-            // ---------- пишем всё в MemoryStream ----------
-            using var ms = new MemoryStream();
-            using (var bw = new BinaryWriter(ms, System.Text.Encoding.ASCII, true))
-            {
-                // magic + version
-                bw.Write((byte)0x93);
-                bw.Write(System.Text.Encoding.ASCII.GetBytes("NUMPY"));
-                bw.Write((byte)1);         // major
-                bw.Write((byte)0);         // minor
-                bw.Write(hdrSize);         // uint16-LE
-                bw.Write(hdrBytes);
-
-                // данные XYZ (little-endian float32)
-                foreach (var p in points)
-                {
-                    bw.Write(p[0]);
-                    bw.Write(p[1]);
-                    bw.Write(p[2]);
-                }
-                bw.Flush();                // важно, иначе буфер не допишется
-            }
-            ms.Position = 0;               // вернёмся к началу перед отправкой
+                return new float[] { camPt.x, camPt.y, camPt.z };
+            }).ToArray();
+            tcs.SetResult(points);
+        });
     }
+
+    MemoryStream ToNPYFormat(float[][] points)
+    {
+        int n = points.Length;
+        const int cols = 3;                // x y z
+                                           // ---------- собираем заголовок NPY v1.0 ----------
+        string dict = $"{{'descr': '<f4', 'fortran_order': False, 'shape': ({n}, {cols}), }}";
+        int hdrLen = dict.Length + 1;             // + '\n'
+        int pad = 16 - ((10 + hdrLen) % 16);   // 10 = magic(6)+ver(2)+len(2)
+        string hdrStr = dict + new string(' ', pad) + "\n";
+        byte[] hdrBytes = System.Text.Encoding.ASCII.GetBytes(hdrStr);
+        ushort hdrSize = (ushort)hdrBytes.Length;
+
+        // ---------- пишем всё в MemoryStream ----------
+        using var ms = new MemoryStream();
+        using (var bw = new BinaryWriter(ms, System.Text.Encoding.ASCII, true))
+        {
+            // magic + version
+            bw.Write((byte)0x93);
+            bw.Write(System.Text.Encoding.ASCII.GetBytes("NUMPY"));
+            bw.Write((byte)1);         // major
+            bw.Write((byte)0);         // minor
+            bw.Write(hdrSize);         // uint16-LE
+            bw.Write(hdrBytes);
+
+            // данные XYZ (little-endian float32)
+            foreach (var p in points)
+            {
+                bw.Write(p[0]);
+                bw.Write(p[1]);
+                bw.Write(p[2]);
+            }
+            bw.Flush();                // важно, иначе буфер не допишется
+        }
+        ms.Position = 0;               // вернёмся к началу перед отправкой
+        return ms;
+    }
+    async Task GetDepthData(HttpContextBase ctx)
+    {
+        var tcs = new TaskCompletionSource<NativeArray<float4>>();
+
+        RunOnMainThread(() =>
+        {
+            GameObject DepthCamera = GameObject.FindGameObjectWithTag("depth_camera");
+            DepthCameraManager depthManager = DepthCamera.GetComponent<DepthCameraManager>();
+            if (depthManager.ExternalRequestSource == null)
+            {
+                depthManager.ExternalRequestSource = tcs;
+                depthManager.RequestCaptureExternal();
+            }
+            else
+            {
+                tcs.SetException(new Exception("Depth image is already in progress. Can`t process another one!"));
+            }
+        });
+
+        try
+        {
+            NativeArray<float4> DepthData = await tcs.Task;
+            TaskCompletionSource<float[][]> pointsConversionTask = new TaskCompletionSource<float[][]>();
+            ConvertDepthToPoints(pointsConversionTask, DepthData);
+            float[][] points = await pointsConversionTask.Task;
+            MemoryStream NPYPointsStream = ToNPYFormat(points);
+            ctx.Response.StatusCode = 200;
+            ctx.Response.ContentType = "application/octet-stream";
+            ctx.Response.Headers.Add("Content-Disposition",
+                                     "attachment; filename=\"depth.npy\"");
+            await ctx.Response.Send(NPYPointsStream.ToArray());
+        }
+        catch (Exception e)
+        {
+            ctx.Response.StatusCode = 500;
+            await ctx.Response.Send("Depth Camera Error: " + e.Message);
+        }
+    }
+    
 }

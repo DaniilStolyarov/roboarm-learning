@@ -18,6 +18,7 @@ public class DepthCameraManager : MonoBehaviour
     [Tooltip("Гамма-коррекция контраста. 1 = линейно")]
     public float gamma = 0.7f;
 
+    public bool CreateHeatmapDisplay = false;
     DepthChannel depthCh;
     /// <summary>
     /// null -> camera is ready to capture
@@ -49,6 +50,7 @@ public class DepthCameraManager : MonoBehaviour
         {
             ExternalRequestSource.SetResult(data);
             ExternalRequestSource = null;
+            if (!CreateHeatmapDisplay) return;
         }
 
         int w = depthCh.outputTexture.width;
